@@ -23,7 +23,12 @@ func IsLogin(request *http.Request) bool {
 
 	if val, isset := sessions[cookie.Value]; isset {
 		currentDate := time.Now()
-		return currentDate.Before(val.DateDie)
+		if currentDate.Before(val.DateDie) {
+			return true
+		}
+
+		delete(sessions, cookie.Value)
+		return false
 	}
 
 	return false
@@ -42,6 +47,14 @@ func SetSession(w http.ResponseWriter, user user.User) {
 	http.SetCookie(w, cookie)
 }
 
+func GetUser(sessionToken string) *user.User {
+	if val, isset := sessions[sessionToken]; isset {
+		return &val.User
+	}
+
+	return nil
+}
+
 func getToken() string {
 	token := generateToken()
 
@@ -54,8 +67,8 @@ func getToken() string {
 
 func generateToken() string {
 	rand.Seed(time.Now().UnixNano())
-	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ" +
-		"abcdefghijklmnopqrstuvwxyzåäö" +
+	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+		"abcdefghijklmnopqrstuvwxyz" +
 		"0123456789")
 	length := 16
 	var b strings.Builder
