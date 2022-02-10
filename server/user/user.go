@@ -3,7 +3,8 @@ package user
 import "pipeliner/server/rules"
 
 type User struct {
-	Name  string
+	Id    int
 	Login string
+	Name  string
 	Rules rules.Rules
 }
