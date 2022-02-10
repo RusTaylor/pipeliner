@@ -1,0 +1,20 @@
+version: "3"
+
+services:
+  pipe_postgres:
+    image: postgres:latest
+    volumes:
+      - ./docker/postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: pipe_db
+networks:
+  internal:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.220.0/28
