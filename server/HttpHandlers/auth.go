@@ -1,12 +1,11 @@
 package HttpHandlers
 
 import (
-	"context"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 	"html/template"
 	"log"
 	"net/http"
+	"pipeliner/database"
 	"pipeliner/server/session"
 	"pipeliner/server/user"
 )
@@ -52,14 +51,14 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dbpool, err := pgxpool.Connect(context.Background(), "postgres://user:1234@localhost:5432/pipe_db")
+	db, err := database.GetDb()
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - Something bad happened!"))
 		return
 	}
-	defer dbpool.Close()
+	defer db.Close()
 
 	r.ParseForm()
 	login := r.FormValue("login")
@@ -71,8 +70,7 @@ func Auth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var userFromDb UserFromDb
-	err = dbpool.QueryRow(context.Background(),
-		"SELECT id,login,name,password FROM \"user\"").Scan(
+	err = db.QueryRow("SELECT id,login,name,password FROM \"user\"").Scan(
 		&userFromDb.Id,
 		&userFromDb.Login,
 		&userFromDb.Name,
