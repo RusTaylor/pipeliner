@@ -1,1 +1,4 @@
 .idea
+docker
+docker-compose.yml
+config.yml
