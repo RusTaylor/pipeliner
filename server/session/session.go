@@ -5,14 +5,20 @@ import (
 	"net/http"
 	"pipeliner/server/user"
 	"strings"
+	"sync"
 	"time"
 )
 
-var sessions = make(map[string]Session)
+var sessions = Sessions{List: make(map[string]Session)}
 
 type Session struct {
 	User    user.User
 	DateDie time.Time
+}
+
+type Sessions struct {
+	List map[string]Session
+	sync.RWMutex
 }
 
 func IsLogin(request *http.Request) bool {
@@ -21,13 +27,16 @@ func IsLogin(request *http.Request) bool {
 		return false
 	}
 
-	if val, isset := sessions[cookie.Value]; isset {
+	sessions.Lock()
+	defer sessions.Unlock()
+	if val, isset := sessions.List[cookie.Value]; isset {
 		currentDate := time.Now()
+
 		if currentDate.Before(val.DateDie) {
 			return true
 		}
 
-		delete(sessions, cookie.Value)
+		delete(sessions.List, cookie.Value)
 		return false
 	}
 
@@ -37,7 +46,10 @@ func IsLogin(request *http.Request) bool {
 func SetSession(w http.ResponseWriter, user user.User) {
 	token := getToken()
 	dateDie := time.Now().Add(9 * time.Hour)
-	sessions[token] = Session{User: user, DateDie: dateDie}
+
+	sessions.Lock()
+	sessions.List[token] = Session{User: user, DateDie: dateDie}
+	sessions.Unlock()
 
 	cookie := &http.Cookie{
 		Name:  "token",
@@ -48,7 +60,10 @@ func SetSession(w http.ResponseWriter, user user.User) {
 }
 
 func GetUser(sessionToken string) *user.User {
-	if val, isset := sessions[sessionToken]; isset {
+	sessions.RLock()
+	defer sessions.RUnlock()
+
+	if val, isset := sessions.List[sessionToken]; isset {
 		return &val.User
 	}
 
@@ -58,7 +73,9 @@ func GetUser(sessionToken string) *user.User {
 func getToken() string {
 	token := generateToken()
 
-	if _, isset := sessions[token]; isset {
+	sessions.RLock()
+	defer sessions.RUnlock()
+	if _, isset := sessions.List[token]; isset {
 		return getToken()
 	}
 
