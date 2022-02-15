@@ -1,0 +1,13 @@
+# Server configurations
+server:
+  host: "pipeliner"
+  port: "8080"
+
+# Database credentials
+database:
+  user: "user"
+  password: "1234"
+  host: "localhost"
+  port: "5432"
+  dbName: "pipe_db"
+# todo Указывать драйвер базы. Пример: pgsql|mysql
